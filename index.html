@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Generador de Video + Ad</title>
+  <title>Generador de Links con Anuncio</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -86,40 +86,65 @@
   <div class="card">
     <h2>Generador de Video + Ad</h2>
 
-    <label for="vidUrl">Link del Video:</label>
-    <input type="url" id="vidUrl" placeholder="https://..." required>
+    <label for="vidUrl">Link del Video (ej. ou.gy / videy):</label>
+    <input type="url" id="vidUrl" placeholder="https://ou.gy/..." required>
 
-    <label for="adUrl">Link del Anuncio:</label>
-    <input type="url" id="adUrl" placeholder="https://..." required>
+    <label for="adUrl">Link del Anuncio (ej. salien.com):</label>
+    <input type="url" id="adUrl" placeholder="https://salien.com/..." required>
 
-    <button onclick="generarEnlace()">Generar Enlace Compacto</button>
+    <label for="imgUrl">Link de Miniatura / Portada (Opcional):</label>
+    <input type="url" id="imgUrl" placeholder="Dejar vacío para fondo negro por defecto">
+
+    <button onclick="generarEnlace()">Generar Link Listo</button>
 
     <div class="resultado-box" id="resultadoBox">
-      <label>Tu enlace listo:</label>
+      <label>Tu enlace generado:</label>
       <input type="text" id="linkFinal" readonly>
       <button class="btn-copiar" onclick="copiarEnlace()" id="btnCopiar">Copiar Enlace</button>
     </div>
   </div>
 
-  <script>
-    function generarEnlace() {
+ <script>
+    async function generarEnlace() {
       const vid = document.getElementById('vidUrl').value.trim();
       const ad = document.getElementById('adUrl').value.trim();
+      const img = document.getElementById('imgUrl').value.trim();
 
       if (!vid || !ad) {
-        alert("Mano, rellena ambos campos.");
+        alert("Mano, mete al menos el link del video y el del anuncio.");
         return;
       }
 
-      // Codificar en Base64 de forma ultra compacta
-      const vB64 = btoa(vid);
-      const aB64 = btoa(ad);
+      // Empaquetar los datos en un objeto y convertir a Base64
+      const payload = { vid: vid, ad: ad };
+      if (img) payload.img = img;
 
+      const codigo = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+
+      // Ruta base hacia ver.html
       const urlBase = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
-      const urlFinal = `${urlBase}ver.html?v=${vB64}&a=${aB64}`;
+      const urlLarga = `${urlBase}ver.html?d=${codigo}`;
 
-      document.getElementById('linkFinal').value = urlFinal;
+      // Mostrar temporalmente que está cargando el link corto
+      document.getElementById('linkFinal').value = "Acortando enlace... un momento...";
       document.getElementById('resultadoBox').style.display = 'block';
+
+      try {
+        // Usar TinyURL de forma anónima y gratuita por API
+        const respuesta = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(urlLarga)}`);
+        const urlCorta = await respuesta.text();
+
+        if (urlCorta.startsWith('http')) {
+          document.getElementById('linkFinal').value = urlCorta;
+        } else {
+          // Si falla el servicio, te muestra el largo como respaldo
+          document.getElementById('linkFinal').value = urlLarga;
+        }
+      } catch (error) {
+        // Si hay problemas de red, usa el largo
+        document.getElementById('linkFinal').value = urlLarga;
+      }
+
       document.getElementById('btnCopiar').innerText = 'Copiar Enlace';
     }
 
