@@ -5,144 +5,168 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reproductor de Video</title>
   <style>
-    body, html {
+    body {
       margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      background-color: #000;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
+      padding: 20px;
+      background-color: #111111;
       font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      box-sizing: border-box;
     }
-    .player-container {
+
+    .video-container {
       position: relative;
       width: 100%;
-      max-width: 800px;
-      aspect-ratio: 16/9;
-      background-color: #111;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      cursor: pointer;
+      max-width: 640px;
+      aspect-ratio: 16 / 9;
+      background-color: #000000;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
     }
-    video {
+
+    /* Imagen de vista previa/miniatura */
+    .video-thumbnail {
       width: 100%;
       height: 100%;
-      object-fit: contain;
+      object-fit: cover;
+      display: block;
+      opacity: 0.8;
     }
-    .play-overlay {
+
+    /* Botón de Play centrado */
+    .play-button {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 65px;
+      height: 65px;
+      background-color: rgba(255, 0, 0, 0.85);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      transition: transform 0.2s ease, background-color 0.2s ease;
+      z-index: 2;
+    }
+
+    .play-button::after {
+      content: '';
+      display: block;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 12px 0 12px 20px;
+      border-color: transparent transparent transparent #ffffff;
+      margin-left: 4px;
+    }
+
+    .video-container:hover .play-button {
+      transform: translate(-50%, -50%) scale(1.1);
+      background-color: rgba(255, 0, 0, 1);
+    }
+
+    /* Capa del Anuncio (Primer clic) */
+    .overlay-link {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: rgba(0, 0, 0, 0.4);
-      transition: background 0.3s;
+      z-index: 10;
+      background: transparent;
+      cursor: pointer;
     }
-    .play-overlay:hover {
-      background: rgba(0, 0, 0, 0.2);
-    }
-    .play-btn {
-      width: 80px;
-      height: 80px;
-      background-color: rgba(255, 0, 0, 0.9);
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-      transition: transform 0.2s;
-    }
-    .play-btn:hover {
-      transform: scale(1.1);
-    }
-    .play-btn::after {
-      content: "";
+
+    /* Enlace final al video de Videy */
+    .video-link {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 5;
+      text-decoration: none;
       display: block;
-      width: 0;
-      height: 0;
-      border-style: solid;
-      border-width: 18px 0 18px 30px;
-      border-color: transparent transparent transparent #ffffff;
-      margin-left: 5px;
     }
-    .error-msg {
-      color: #fff;
+
+    /* Botón de Telegram */
+    .telegram-btn-container {
       text-align: center;
-      padding: 20px;
+      margin-top: 15px;
+    }
+
+    .telegram-btn {
+      display: inline-block;
+      background-color: #0088cc;
+      color: #ffffff;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      text-decoration: none;
+      border-radius: 25px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    .telegram-btn:hover {
+      background-color: #006699;
+      transform: translateY(-2px);
     }
   </style>
 </head>
 <body>
 
-  <div class="player-container" id="playerContainer" onclick="manejarClic()">
-    <video id="videoPlayer" controls style="display: none;"></video>
-    
-    <div class="play-overlay" id="playOverlay">
-      <div class="play-btn"></div>
-    </div>
+  <div class="video-container">
+    <!-- CAPA 1: ANUNCIO -->
+    <a href="#" target="_blank" class="overlay-link" id="adOverlay"></a>
+
+    <!-- CAPA 2: ENLACE AL VIDEO -->
+    <a href="#" target="_blank" class="video-link" id="videoLink">
+      <img src="https://via.placeholder.com/640x360/000000/FFFFFF?text=Haz+clic+para+reproducir" alt="Thumbnail" class="video-thumbnail" id="thumbImg">
+      <div class="play-button"></div>
+    </a>
+  </div>
+
+  <!-- BOTÓN DE TELEGRAM -->
+  <div class="telegram-btn-container">
+    <a href="https://t.me/papasfritasssss" target="_blank" class="telegram-btn">
+      Más videos en Telegram
+    </a>
   </div>
 
   <script>
-    // Leer los parámetros de la URL de forma segura
+    // 1. Leer los parámetros ocultos de la URL (?d=...)
     const params = new URLSearchParams(window.location.search);
-    const vParam = params.get('v');
-    const aParam = params.get('a');
-    const dParam = params.get('d'); // Respaldo formato antiguo
+    const dataCodificada = params.get('d');
 
-    let videoUrl = "";
-    let adUrl = "";
+    const adOverlay = document.getElementById('adOverlay');
+    const videoLink = document.getElementById('videoLink');
+    const thumbImg = document.getElementById('thumbImg');
 
-    try {
-      if (vParam && aParam) {
-        videoUrl = atob(vParam);
-        adUrl = atob(aParam);
-      } else if (dParam) {
-        const data = JSON.parse(decodeURIComponent(escape(atob(dParam))));
-        videoUrl = data.vid;
-        adUrl = data.ad;
-      }
-    } catch (e) {
-      console.error("Error al decodificar los enlaces", e);
-    }
-
-    const container = document.getElementById('playerContainer');
-    const video = document.getElementById('videoPlayer');
-    const overlay = document.getElementById('playOverlay');
-
-    let clicks = 0;
-
-    if (!videoUrl || !adUrl) {
-      container.innerHTML = '<div class="error-msg"><h2>Enlace inválido o incompleto.</h2><p>Verifica el enlace generado.</p></div>';
-    } else {
-      // Configuramos el video oculto de fondo
-      video.src = videoUrl;
-    }
-
-    function manejarClic() {
-      if (!videoUrl || !adUrl) return;
-
-      clicks++;
-
-      if (clicks === 1) {
-        // Primer clic: Abre el anuncio en una pestaña nueva y prepara el video
-        window.open(adUrl, '_blank');
+    if (dataCodificada) {
+      try {
+        // Decodificar Base64 y convertir de nuevo a objeto JSON
+        const datos = JSON.parse(decodeURIComponent(escape(atob(dataCodificada))));
         
-        // Ocultamos la capa de reproducción falsa y mostramos el reproductor real
-        overlay.style.display = 'none';
-        video.style.display = 'block';
-        video.play();
-      } else {
-        // Segundo clic en adelante: Redirige directamente al link del video original
-        window.location.href = videoUrl;
+        if (datos.ad) adOverlay.href = datos.ad;
+        if (datos.vid) videoLink.href = datos.vid;
+        if (datos.img) thumbImg.src = datos.img; // Por si opcionalmente pones portada
+      } catch (e) {
+        console.error("Enlace inválido o corrupto");
       }
     }
+
+    // 2. Tu lógica exacta del primer clic para ocultar la capa del anuncio
+    adOverlay.addEventListener('click', function() {
+      adOverlay.style.display = "none";
+    });
   </script>
 
 </body>
