@@ -79,12 +79,6 @@
     .btn-copiar:hover {
       background-color: #006699;
     }
-    .aviso {
-      font-size: 12px;
-      color: #888;
-      margin-top: 8px;
-      text-align: center;
-    }
   </style>
 </head>
 <body>
@@ -92,82 +86,40 @@
   <div class="card">
     <h2>Generador de Video + Ad</h2>
 
-    <label for="vidUrl">Link del Video (ej. videy / ou.gy):</label>
-    <input type="url" id="vidUrl" placeholder="https://videy.cc/v/..." required>
+    <label for="vidUrl">Link del Video:</label>
+    <input type="url" id="vidUrl" placeholder="https://..." required>
 
-    <label for="adUrl">Link del Anuncio (ej. salien.com):</label>
-    <input type="url" id="adUrl" placeholder="https://salien.com/..." required>
+    <label for="adUrl">Link del Anuncio:</label>
+    <input type="url" id="adUrl" placeholder="https://..." required>
 
-    <label for="imgUrl">Link de Miniatura / Portada (Opcional):</label>
-    <input type="url" id="imgUrl" placeholder="Dejar vacío para fondo negro por defecto">
-
-    <button onclick="generarEnlace()">Generar Enlace Corto</button>
+    <button onclick="generarEnlace()">Generar Enlace Compacto</button>
 
     <div class="resultado-box" id="resultadoBox">
-      <label>Tu enlace listo para copiar:</label>
+      <label>Tu enlace listo:</label>
       <input type="text" id="linkFinal" readonly>
       <button class="btn-copiar" onclick="copiarEnlace()" id="btnCopiar">Copiar Enlace</button>
-      <div class="aviso" id="avisoEstado"></div>
     </div>
   </div>
 
   <script>
-    async function generarEnlace() {
+    function generarEnlace() {
       const vid = document.getElementById('vidUrl').value.trim();
       const ad = document.getElementById('adUrl').value.trim();
-      const img = document.getElementById('imgUrl').value.trim();
 
       if (!vid || !ad) {
-        alert("Mano, mete al menos el link del video y el del anuncio.");
+        alert("Mano, rellena ambos campos.");
         return;
       }
 
-      // Empaquetar y cifrar en Base64
-      const payload = { vid: vid, ad: ad };
-      if (img) payload.img = img;
-      const codigo = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+      // Codificar en Base64 de forma ultra compacta
+      const vB64 = btoa(vid);
+      const aB64 = btoa(ad);
 
       const urlBase = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
-      const urlLarga = `${urlBase}ver.html?d=${codigo}`;
+      const urlFinal = `${urlBase}ver.html?v=${vB64}&a=${aB64}`;
 
-      document.getElementById('linkFinal').value = "Generando link corto...";
+      document.getElementById('linkFinal').value = urlFinal;
       document.getElementById('resultadoBox').style.display = 'block';
-      document.getElementById('avisoEstado').innerText = "";
-
-      try {
-        // Usando un endpoint seguro de TinyURL con formato texto plano
-        const respuesta = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(urlLarga)}`);
-        
-        if (respuesta.ok) {
-          const urlCorta = await respuesta.text();
-          if (urlCorta && urlCorta.startsWith('http')) {
-            document.getElementById('linkFinal').value = urlCorta;
-            document.getElementById('avisoEstado').innerText = "¡Enlace acortado con éxito!";
-          } else {
-            throw new Error("Respuesta inválida");
-          }
-        } else {
-          throw new Error("Error en servidor");
-        }
-      } catch (error) {
-        // Si el navegador bloquea la petición externa, usamos un acortador alternativo ultra rápido (is.gd)
-        try {
-          const respAlt = await fetch(`https://is.gd/create.php?format=simple&url=${encodeURIComponent(urlLarga)}`);
-          if (respAlt.ok) {
-            const urlAlt = await respAlt.text();
-            if (urlAlt && urlAlt.startsWith('http')) {
-              document.getElementById('linkFinal').value = urlAlt;
-              document.getElementById('avisoEstado').innerText = "¡Enlace acortado con éxito (Alternativa 2)!";
-              return;
-            }
-          }
-        } catch (e) {}
-
-        // Si de plano los bloquea todos por seguridad local, te deja el link funcional
-        document.getElementById('linkFinal').value = urlLarga;
-        document.getElementById('avisoEstado').innerText = "Nota: Usando enlace directo (copia y usa un acortador manual si lo prefieres).";
-      }
-
       document.getElementById('btnCopiar').innerText = 'Copiar Enlace';
     }
 
