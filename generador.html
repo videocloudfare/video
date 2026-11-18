@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generador de Links con Anuncio</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 15px;
+      box-sizing: border-box;
+    }
+    .card {
+      background-color: #1e1e1e;
+      padding: 25px;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 450px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+    }
+    h2 {
+      margin-top: 0;
+      text-align: center;
+      color: #ff3b3b;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      margin-bottom: 5px;
+      font-size: 14px;
+      color: #cccccc;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #333;
+      background-color: #2a2a2a;
+      color: #fff;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    input:focus {
+      outline: none;
+      border-color: #ff3b3b;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 20px;
+      border: none;
+      border-radius: 8px;
+      background-color: #ff3b3b;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #e02e2e;
+    }
+    .resultado-box {
+      display: none;
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid #333;
+    }
+    .btn-copiar {
+      background-color: #0088cc;
+      margin-top: 10px;
+    }
+    .btn-copiar:hover {
+      background-color: #006699;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>Generador de Video + Ad</h2>
+
+    <label for="vidUrl">Link del Video (ej. ou.gy / videy):</label>
+    <input type="url" id="vidUrl" placeholder="https://ou.gy/..." required>
+
+    <label for="adUrl">Link del Anuncio (ej. salien.com):</label>
+    <input type="url" id="adUrl" placeholder="https://salien.com/..." required>
+
+    <label for="imgUrl">Link de Miniatura / Portada (Opcional):</label>
+    <input type="url" id="imgUrl" placeholder="Dejar vacío para fondo negro por defecto">
+
+    <button onclick="generarEnlace()">Generar Link Listo</button>
+
+    <div class="resultado-box" id="resultadoBox">
+      <label>Tu enlace generado:</label>
+      <input type="text" id="linkFinal" readonly>
+      <button class="btn-copiar" onclick="copiarEnlace()" id="btnCopiar">Copiar Enlace</button>
+    </div>
+  </div>
+
+<script>
+    async function generarEnlace() {
+      const vid = document.getElementById('vidUrl').value.trim();
+      const ad = document.getElementById('adUrl').value.trim();
+      const img = document.getElementById('imgUrl').value.trim();
+
+      if (!vid || !ad) {
+        alert("Mano, mete al menos el link del video y el del anuncio.");
+        return;
+      }
+
+      // Empaquetar los datos en un objeto y convertir a Base64
+      const payload = { vid: vid, ad: ad };
+      if (img) payload.img = img;
+
+      const codigo = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+
+      // Ruta base hacia ver.html
+      const urlBase = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+      const urlLarga = `${urlBase}ver.html?d=${codigo}`;
+
+      // Mostrar temporalmente que está cargando el link corto
+      document.getElementById('linkFinal').value = "Acortando enlace... un momento...";
+      document.getElementById('resultadoBox').style.display = 'block';
+
+      try {
+        // Usar TinyURL de forma anónima y gratuita por API
+        const respuesta = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(urlLarga)}`);
+        const urlCorta = await respuesta.text();
+
+        if (urlCorta.startsWith('http')) {
+          document.getElementById('linkFinal').value = urlCorta;
+        } else {
+          // Si falla el servicio, te muestra el largo como respaldo
+          document.getElementById('linkFinal').value = urlLarga;
+        }
+      } catch (error) {
+        // Si hay problemas de red, usa el largo
+        document.getElementById('linkFinal').value = urlLarga;
+      }
+
+      document.getElementById('btnCopiar').innerText = 'Copiar Enlace';
+    }
+
+    function copiarEnlace() {
+      const inputLink = document.getElementById('linkFinal');
+      inputLink.select();
+      inputLink.setSelectionRange(0, 99999);
+      navigator.clipboard.writeText(inputLink.value);
+      
+      document.getElementById('btnCopiar').innerText = '¡Copiado al portapapeles!';
+    }
+  </script>
+
+</body>
+</html>

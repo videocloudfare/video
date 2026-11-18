@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reproductor de Video</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background-color: #111111;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+
+    .video-container {
+      position: relative;
+      width: 100%;
+      max-width: 640px;
+      aspect-ratio: 16 / 9;
+      background-color: #000000;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Imagen de vista previa/miniatura */
+    .video-thumbnail {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      opacity: 0.8;
+    }
+
+    /* Botón de Play centrado */
+    .play-button {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 65px;
+      height: 65px;
+      background-color: rgba(255, 0, 0, 0.85);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      transition: transform 0.2s ease, background-color 0.2s ease;
+      z-index: 2;
+    }
+
+    .play-button::after {
+      content: '';
+      display: block;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 12px 0 12px 20px;
+      border-color: transparent transparent transparent #ffffff;
+      margin-left: 4px;
+    }
+
+    .video-container:hover .play-button {
+      transform: translate(-50%, -50%) scale(1.1);
+      background-color: rgba(255, 0, 0, 1);
+    }
+
+    /* Capa del Anuncio (Primer clic) */
+    .overlay-link {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    /* Enlace final al video de Videy */
+    .video-link {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 5;
+      text-decoration: none;
+      display: block;
+    }
+
+    /* Botón de Telegram */
+    .telegram-btn-container {
+      text-align: center;
+      margin-top: 15px;
+    }
+
+    .telegram-btn {
+      display: inline-block;
+      background-color: #0088cc;
+      color: #ffffff;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      text-decoration: none;
+      border-radius: 25px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    .telegram-btn:hover {
+      background-color: #006699;
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="video-container">
+    <!-- CAPA 1: ANUNCIO -->
+    <a href="#" target="_blank" class="overlay-link" id="adOverlay"></a>
+
+    <!-- CAPA 2: ENLACE AL VIDEO -->
+    <a href="#" target="_blank" class="video-link" id="videoLink">
+      <img src="https://via.placeholder.com/640x360/000000/FFFFFF?text=Haz+clic+para+reproducir" alt="Thumbnail" class="video-thumbnail" id="thumbImg">
+      <div class="play-button"></div>
+    </a>
+  </div>
+
+  <!-- BOTÓN DE TELEGRAM -->
+  <div class="telegram-btn-container">
+    <a href="https://t.me/papasfritasssss" target="_blank" class="telegram-btn">
+      Más videos en Telegram
+    </a>
+  </div>
+
+  <script>
+    // 1. Leer los parámetros ocultos de la URL (?d=...)
+    const params = new URLSearchParams(window.location.search);
+    const dataCodificada = params.get('d');
+
+    const adOverlay = document.getElementById('adOverlay');
+    const videoLink = document.getElementById('videoLink');
+    const thumbImg = document.getElementById('thumbImg');
+
+    if (dataCodificada) {
+      try {
+        // Decodificar Base64 y convertir de nuevo a objeto JSON
+        const datos = JSON.parse(decodeURIComponent(escape(atob(dataCodificada))));
+        
+        if (datos.ad) adOverlay.href = datos.ad;
+        if (datos.vid) videoLink.href = datos.vid;
+        if (datos.img) thumbImg.src = datos.img; // Por si opcionalmente pones portada
+      } catch (e) {
+        console.error("Enlace inválido o corrupto");
+      }
+    }
+
+    // 2. Tu lógica exacta del primer clic para ocultar la capa del anuncio
+    adOverlay.addEventListener('click', function() {
+      adOverlay.style.display = "none";
+    });
+  </script>
+
+</body>
+</html>
